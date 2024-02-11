@@ -20,17 +20,18 @@ class CmdArgsCpp {
 	public:
 		CmdArgsCpp() = default;
 
-		void AddArgument(const ArgCode &short_format, 
-						 const ArgCode &long_format, 
-						 const ArgDesc &description);
-
 		void AddArgument(const ArgCode &short_format);
+
+		void AddArgument(const ArgCode &short_format, 
+						 const ArgCode &long_format,
+						 const ArgDesc &description, const LangCode lang);
+
 		void AppendLongFormat(const ArgCode &short_format, const ArgCode &long_format);
 		void AppendDescription(const ArgCode &short_format, const ArgDesc &description, const LangCode lang);
 		void AppendColor(const ArgCode &short_format, const ColorCode &color);
 		void AppendTag(const ArgCode &short_format, const TagCode &tag);
 			
-		void ParseFileForArguments(std::string &file_path);
+		void ParseJsonFileForArguments(std::string &file_path);
 
 		void DebugArgs();
 
@@ -62,7 +63,7 @@ class CmdArgsCpp {
 		void CopyPriority(const Priority src, Priority trg);
 		void CopyDescription(const DescMap &src, DescMap &trg);
 
-		LangCode				_default_lan;
+		LangCode				_default_lan = "en";
 		std::map<ArgCode, Data>	_args_data;
 
 };

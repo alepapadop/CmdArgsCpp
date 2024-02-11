@@ -7,6 +7,7 @@ using ExcpMsg = char *;
 
 extern const unsigned int CmdArgsCppSpace::invalid_code = -1;
 
+
 namespace ExceptionMessages {
 
 	constexpr ExcpMsg arg_exists = "Argument already exists";
@@ -158,6 +159,19 @@ void CmdArgsCpp::AddArgument(const ArgCode &short_format)
 
 }
 
+void CmdArgsCpp::AddArgument(const ArgCode &short_format, 
+						     const ArgCode &long_format,
+						     const ArgDesc &description, const LangCode lang)
+{
+    try {
+        AddArgument(short_format);
+        AppendLongFormat(short_format, long_format);
+        AppendDescription(short_format, description, lang);
+    } catch (std::logic_error e) {
+        throw std::logic_error(ExceptionMessages::arg_exists);
+    }
+    
+}
 
 void CmdArgsCpp::AppendLongFormat(const ArgCode &short_format, const ArgCode &long_format)
 {
