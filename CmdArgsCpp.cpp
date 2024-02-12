@@ -3,15 +3,15 @@
 
 
 
-using ExcpMsg = char *;
+using ExcpMsg = std::string;
 
 extern const unsigned int CmdArgsCppSpace::invalid_code = -1;
 
 
 namespace ExceptionMessages {
 
-	constexpr ExcpMsg arg_exists = "Argument already exists";
-	constexpr ExcpMsg arg_non_exists = "Argument doesn't exists";
+	const ExcpMsg arg_exists = "Argument already exists";
+	const ExcpMsg arg_non_exists = "Argument doesn't exists";
 }
 
 void CmdArgsCpp::DebugArgs()
@@ -28,8 +28,7 @@ void CmdArgsCpp::DebugArgs()
         std::cout << tab << "Color: " << data.color << std::endl;
 
         for (const auto val2 : data.description) {
-            std::cout << tab << tab << "Language: " << val2.first << std::endl;
-            std::cout << tab << tab << "Description: " << val2.second << std::endl;
+            std::cout << tab << "Language: " << val2.first << " " << "Description: " << val2.second << std::endl;
         }
     }
 }
@@ -55,10 +54,19 @@ bool CmdArgsCpp::FindData(const ArgCode &short_format, Data &data)
 
 }
 
-void CmdArgsCpp::CopyString(const std::string &src, std::string trg)
+void CmdArgsCpp::SetData(const ArgCode &short_format, const Data &data)
 {
-    if (trg.length()) {
-        if (src.length()) {
+    auto it = _args_data.find(short_format);
+
+    if (it != _args_data.end()) {
+        it->second = data;
+    }
+}
+
+void CmdArgsCpp::CopyString(const std::string &src, std::string &trg)
+{
+    if (src.length()) {
+        if (trg.length()) {
             throw std::logic_error(ExceptionMessages::arg_exists);
         } else {
             trg = src;
@@ -66,7 +74,7 @@ void CmdArgsCpp::CopyString(const std::string &src, std::string trg)
     }
 }
 
-void CmdArgsCpp::CopyUnsignedInt(const unsigned int src, unsigned int trg)
+void CmdArgsCpp::CopyUnsignedInt(const unsigned int src, unsigned int &trg)
 {
     if (trg != CmdArgsCppSpace::invalid_code) {
         if (src != CmdArgsCppSpace::invalid_code) {
@@ -105,7 +113,7 @@ void CmdArgsCpp::CopyPriority(const Priority src, Priority trg)
 
 void CmdArgsCpp::CopyDescription(const DescMap &src, DescMap &trg)
 {
-    if (trg.size()) {
+    if (src.size()) {
         for (const auto &val : src) {
             auto it = trg.find(val.first);
 
@@ -135,8 +143,9 @@ void CmdArgsCpp::AppendData(const ArgCode &short_format, Data &data)
 {
     Data old_data;
 
-    if (!FindData(short_format, old_data)) {
+    if (FindData(short_format, old_data)) {
         CopyValidData(data, old_data);
+        SetData(short_format, old_data);
     } else {
         throw std::logic_error(ExceptionMessages::arg_non_exists);
     }

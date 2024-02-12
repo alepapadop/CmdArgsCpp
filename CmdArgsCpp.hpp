@@ -50,10 +50,11 @@ class CmdArgsCpp {
 
 		void InitData(Data &data);
 		bool FindData(const ArgCode &short_format, Data &data);
+		void SetData(const ArgCode &short_format, const Data &data);
 		void AppendData(const ArgCode &short_format, Data &data);
 
-		void CopyString(const std::string &src, std::string trg);
-		void CopyUnsignedInt(const unsigned int src, unsigned int trg);
+		void CopyString(const std::string &src, std::string &trg);
+		void CopyUnsignedInt(const unsigned int src, unsigned int &trg);
 		void CopyValidData(const Data &src_data, Data &trg_data);
 		
 		void CopyShortFormat(const ArgCode &src, ArgCode &trg);
