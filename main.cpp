@@ -14,6 +14,8 @@ int main(int, char**){
 
     cmd_args.DebugArgs();
 
+    // kane parse ta char ** kai psakse gia 
+    // na vreis an iparxoun
 
     return EXIT_SUCCESS;
 

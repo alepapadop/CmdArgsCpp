@@ -26,6 +26,9 @@ void CmdArgsCpp::DebugArgs()
         std::cout << tab << "Tag: " << data.tag << std::endl;
         std::cout << tab << "Priority: " << data.priority << std::endl;
         std::cout << tab << "Color: " << data.color << std::endl;
+        std::cout << tab << "Mandatory: " << data.mandatory << std::endl;
+        std::cout << tab << "NumParams: " << data.num_of_params << std::endl;
+        std::cout << tab << "FormatParams: " << data.format_of_params << std::endl;
 
         for (const auto val2 : data.description) {
             std::cout << tab << "Language: " << val2.first << " " << "Description: " << val2.second << std::endl;
@@ -38,6 +41,9 @@ void CmdArgsCpp::InitData(Data &data)
 {
     data.color = CmdArgsCppSpace::invalid_code;
     data.priority = CmdArgsCppSpace::invalid_code;
+    data.mandatory = false;
+    data.num_of_params = "*";       //any
+    data.format_of_params = "$s";   
 }
 
 bool CmdArgsCpp::FindData(const ArgCode &short_format, Data &data)
@@ -54,6 +60,7 @@ bool CmdArgsCpp::FindData(const ArgCode &short_format, Data &data)
 
 }
 
+
 void CmdArgsCpp::SetData(const ArgCode &short_format, const Data &data)
 {
     auto it = _args_data.find(short_format);
@@ -61,6 +68,11 @@ void CmdArgsCpp::SetData(const ArgCode &short_format, const Data &data)
     if (it != _args_data.end()) {
         it->second = data;
     }
+}
+
+void CmdArgsCpp::CopyBool(const bool src, bool &trg)
+{
+    trg = src;
 }
 
 void CmdArgsCpp::CopyString(const std::string &src, std::string &trg)
@@ -110,6 +122,20 @@ void CmdArgsCpp::CopyPriority(const Priority src, Priority trg)
     CopyUnsignedInt(src, trg);
 }
 
+void CmdArgsCpp::CopyNumOfParams(const NumParams &src, NumParams &trg)
+{
+    CopyString(src, trg);
+}
+
+void CmdArgsCpp::CopyFormatOfParams(const FormatParams &src, FormatParams &trg)
+{
+    CopyString(src, trg);
+}
+
+void CmdArgsCpp::CopyMandatory(const Mandatory src, Mandatory trg)
+{
+    CopyBool(src, trg);
+}
 
 void CmdArgsCpp::CopyDescription(const DescMap &src, DescMap &trg)
 {
@@ -223,4 +249,18 @@ void CmdArgsCpp::AppendTag(const ArgCode &short_format, const TagCode &tag)
     AppendData(short_format, data);
 }
 
+
+void CmdArgsCpp::AppendParamInfo(const ArgCode &short_format, 
+                        const Mandatory mandatory, 
+                        const NumParams &num_of_params, 
+                        const FormatParams &format_of_params)
+{
+    Data data;
+
+    InitData(data);
+    data.mandatory = mandatory;
+    data.num_of_params = num_of_params;
+    data.format_of_params = format_of_params;
+    AppendData(short_format, data);
+}
 
