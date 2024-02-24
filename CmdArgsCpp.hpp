@@ -13,6 +13,7 @@ using NumParams 	= std::string;
 using FormatParams 	= std::string;
 using Mandatory 	= bool;
 
+
 namespace CmdArgsCppSpace {
 	extern const unsigned int invalid_code;
 }
@@ -40,9 +41,12 @@ class CmdArgsCpp {
 			
 		void ParseJsonFileForArguments(std::string &file_path);
 
+		void ParseArguments(const int argc, const char *const argv[]);
+
 		void DebugArgs();
 
 	private:
+		
 
 		struct Data {
 			ArgCode 		short_format;
@@ -58,6 +62,8 @@ class CmdArgsCpp {
 			std::string		num_of_params;
 			std::string		format_of_params;
 		};
+
+		using ArgDataPair = std::pair<ArgCode, Data>;
 
 		void InitData(Data &data);
 		bool FindData(const ArgCode &short_format, Data &data);
@@ -78,6 +84,11 @@ class CmdArgsCpp {
 		void CopyNumOfParams(const NumParams &src, NumParams &trg);
 		void CopyFormatOfParams(const FormatParams &src, FormatParams &trg);
 		void CopyMandatory(const Mandatory src, Mandatory trg);
+
+		void ParseCmdArguments(std::string &cmd_args);
+		size_t FindArgumentInString(const std::string &cmd_args, Data &data);
+		size_t FindArgumentsInStringSub(const std::string &cmd_args, const ArgCode &arg);
+		void StoreArgumentInfo(const std::string &cmd_args, const size_t pos, Data &data);
 
 		LangCode				_default_lan = "en";
 		std::map<ArgCode, Data>	_args_data;

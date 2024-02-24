@@ -1,5 +1,6 @@
 #include "CmdArgsCpp.hpp"
 #include <iostream>
+#include <algorithm>
 
 
 
@@ -12,6 +13,7 @@ namespace ExceptionMessages {
 
 	const ExcpMsg arg_exists = "Argument already exists";
 	const ExcpMsg arg_non_exists = "Argument doesn't exists";
+    const ExcpMsg arg_parse_error = "Argument parsing error";
 }
 
 void CmdArgsCpp::DebugArgs()
@@ -264,3 +266,65 @@ void CmdArgsCpp::AppendParamInfo(const ArgCode &short_format,
     AppendData(short_format, data);
 }
 
+size_t CmdArgsCpp::FindArgumentsInStringSub(const std::string &cmd_args, const ArgCode &arg)
+{
+    size_t pos = cmd_args.find(arg);
+
+    if (pos == std::string::npos) {
+        pos = 0;
+    }
+
+    return pos;
+}
+
+size_t CmdArgsCpp::FindArgumentInString(const std::string &cmd_args, Data &data)
+{
+    size_t pos;
+
+    pos = FindArgumentsInStringSub(cmd_args, "-" + data.short_format);
+
+    if (!pos) { 
+        pos = FindArgumentsInStringSub(cmd_args, "--" + data.long_format);
+    }
+
+    return pos;
+
+}
+
+void CmdArgsCpp::StoreArgumentInfo(const std::string &cmd_args, const size_t pos, Data &data)
+{
+    if (!pos) {
+        return;
+    }
+
+    // kati me union edw kai vector
+}
+
+void CmdArgsCpp::ParseCmdArguments(std::string &cmd_args)
+{
+
+    auto func = [this, &cmd_args](ArgDataPair pair_v) {
+            size_t pos = FindArgumentInString(cmd_args, pair_v.second);
+            StoreArgumentInfo(cmd_args, pos, pair_v.second);
+
+    };
+
+    std::for_each(_args_data.begin(), _args_data.end(), nullptr);
+    
+}
+
+void CmdArgsCpp::ParseArguments(const int argc, const char *const argv[])
+{
+    if (argv[argc] != nullptr) {
+        throw std::logic_error(ExceptionMessages::arg_parse_error);
+    } else if (argc != 1) {
+        std::string cmd_args;
+
+        for (int i = 1; i < argc; ++i) {
+            cmd_args.append(argv[i]);
+        }
+
+
+        
+    }
+}
