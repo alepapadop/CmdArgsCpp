@@ -64,6 +64,7 @@ class CmdArgsCpp {
 		};
 
 		using ArgDataPair = std::pair<ArgCode, Data>;
+		using PosDataMap = std::map<size_t, Data>;
 
 		void InitData(Data &data);
 		bool FindData(const ArgCode &short_format, Data &data);
@@ -86,9 +87,11 @@ class CmdArgsCpp {
 		void CopyMandatory(const Mandatory src, Mandatory trg);
 
 		void ParseCmdArguments(std::string &cmd_args);
-		size_t FindArgumentInString(const std::string &cmd_args, Data &data);
+		void FindArgumentInString(const std::string &cmd_args, const Data &data, 
+										PosDataMap &short_format_pos_map);
 		size_t FindArgumentsInStringSub(const std::string &cmd_args, const ArgCode &arg);
-		void StoreArgumentInfo(const std::string &cmd_args, const size_t pos, Data &data);
+		void StoreArgumentInfo(const std::string &cmd_args, const PosDataMap &pos_data_map);
+		void ExtractCmdArgInfo(const std::string &cmd_arg, const Data &data);
 
 		LangCode				_default_lan = "en";
 		std::map<ArgCode, Data>	_args_data;

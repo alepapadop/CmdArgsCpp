@@ -1,6 +1,7 @@
 #include "CmdArgsCpp.hpp"
 #include <iostream>
 #include <algorithm>
+#include <cassert>
 
 
 
@@ -277,7 +278,8 @@ size_t CmdArgsCpp::FindArgumentsInStringSub(const std::string &cmd_args, const A
     return pos;
 }
 
-size_t CmdArgsCpp::FindArgumentInString(const std::string &cmd_args, Data &data)
+void CmdArgsCpp::FindArgumentInString(const std::string &cmd_args, const Data &data, 
+                                            PosDataMap &pos_data_map)
 {
     size_t pos;
 
@@ -287,29 +289,64 @@ size_t CmdArgsCpp::FindArgumentInString(const std::string &cmd_args, Data &data)
         pos = FindArgumentsInStringSub(cmd_args, "--" + data.long_format);
     }
 
-    return pos;
+    if (pos) {
+        pos_data_map.insert(std::make_pair(pos, data));
+    }
 
 }
 
-void CmdArgsCpp::StoreArgumentInfo(const std::string &cmd_args, const size_t pos, Data &data)
+void CmdArgsCpp::ExtractCmdArgInfo(const std::string &cmd_arg, const Data &data)
 {
-    if (!pos) {
+
+    size_t pos = cmd_arg.find(data.short_format);
+
+    if (pos == std::string::npos) {
+        pos = cmd_arg.find(data.long_format);
+    }
+
+    if (pos != std::string::npos) {
+        
+    } else {
+        assert(0);
+    }
+
+}
+
+void CmdArgsCpp::StoreArgumentInfo(const std::string &cmd_args, const PosDataMap &pos_data_map)
+{
+    size_t size = pos_data_map.size();
+
+    if (!size) {
         return;
     }
 
-    // kati me union edw kai vector
+    for (auto it = pos_data_map.begin(); it != pos_data_map.end(); ++it) {
+        size_t pos1 = it->first;
+        size_t pos2 = std::string::npos;
+
+        auto it2 = it;
+        if (++it2 != pos_data_map.end()) {
+            pos2 = it2->first; 
+        } 
+
+        std::string cmd_arg = cmd_args.substr(pos1, pos2 - pos1);
+        ExtractCmdArgInfo(cmd_arg, it->second);
+    }
+
 }
 
 void CmdArgsCpp::ParseCmdArguments(std::string &cmd_args)
 {
+    PosDataMap pos_data_map;
 
-    auto func = [this, &cmd_args](ArgDataPair pair_v) {
-            size_t pos = FindArgumentInString(cmd_args, pair_v.second);
-            StoreArgumentInfo(cmd_args, pos, pair_v.second);
-
+    auto func = [this, &cmd_args, &pos_data_map](ArgDataPair pair_v) {
+            
+            FindArgumentInString(cmd_args, pair_v.second, pos_data_map);
     };
 
-    std::for_each(_args_data.begin(), _args_data.end(), nullptr);
+    StoreArgumentInfo(cmd_args, pos_data_map);
+
+    std::for_each(_args_data.begin(), _args_data.end(), func);
     
 }
 
