@@ -1,7 +1,7 @@
 #include <iostream>
 #include "CmdArgsCpp.hpp"
 
-int main(int, char**){
+int main(int argc, char** argv){
     
 
     std::cout << "Hellooo" << std::endl;
@@ -12,10 +12,9 @@ int main(int, char**){
 
     cmd_args.AddArgument("o", "output", "The output", "en");
 
-    cmd_args.DebugArgs();
+    cmd_args.ParseArguments(argc, argv);
 
-    // kane parse ta char ** kai psakse gia 
-    // na vreis an iparxoun
+    cmd_args.DebugArgs();
 
     return EXIT_SUCCESS;
 

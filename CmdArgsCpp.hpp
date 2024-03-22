@@ -1,6 +1,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 using ArgCode 		= std::string;
 using ArgDesc 		= std::string;
@@ -12,6 +13,9 @@ using Priority 		= unsigned int;
 using NumParams 	= std::string;
 using FormatParams 	= std::string;
 using Mandatory 	= bool;
+using StringVec		= std::vector<std::string>;
+using ArgMap		= std::map<ArgCode, StringVec>;
+
 
 
 namespace CmdArgsCppSpace {
@@ -22,6 +26,15 @@ namespace CmdArgsCppSpace {
 class CmdArgsCpp {
 
 	public:
+		
+		enum ArgType {
+			ARG_TYPE_INT,
+			ARG_TYPE_DOUBLE,
+			ARG_TYPE_STR
+		};
+
+		
+
 		CmdArgsCpp() = default;
 
 		void AddArgument(const ArgCode &short_format);
@@ -65,6 +78,9 @@ class CmdArgsCpp {
 
 		using ArgDataPair = std::pair<ArgCode, Data>;
 		using PosDataMap = std::map<size_t, Data>;
+		using ArgData = std::map<ArgCode, Data>;
+		
+		
 
 		void InitData(Data &data);
 		bool FindData(const ArgCode &short_format, Data &data);
@@ -86,15 +102,17 @@ class CmdArgsCpp {
 		void CopyFormatOfParams(const FormatParams &src, FormatParams &trg);
 		void CopyMandatory(const Mandatory src, Mandatory trg);
 
-		void ParseCmdArguments(std::string &cmd_args);
+		void ParseCmdArguments(std::string &cmd_args);		
 		void FindArgumentInString(const std::string &cmd_args, const Data &data, 
 										PosDataMap &short_format_pos_map);
 		size_t FindArgumentsInStringSub(const std::string &cmd_args, const ArgCode &arg);
 		void StoreArgumentInfo(const std::string &cmd_args, const PosDataMap &pos_data_map);
 		void ExtractCmdArgInfo(const std::string &cmd_arg, const Data &data);
+		void Tokenize(const std::string str, const char delim, StringVec &vec);
 
-		LangCode				_default_lan = "en";
-		std::map<ArgCode, Data>	_args_data;
+		LangCode		_default_lan = "en";
+		ArgData			_args_data;
+		ArgMap			_parsed_args;
 
 };
 

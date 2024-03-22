@@ -2,12 +2,14 @@
 #include <iostream>
 #include <algorithm>
 #include <cassert>
+#include <sstream>
 
 
 
 using ExcpMsg = std::string;
 
 extern const unsigned int CmdArgsCppSpace::invalid_code = -1;
+static const size_t invalid_pos = -1;
 
 
 namespace ExceptionMessages {
@@ -35,6 +37,16 @@ void CmdArgsCpp::DebugArgs()
 
         for (const auto val2 : data.description) {
             std::cout << tab << "Language: " << val2.first << " " << "Description: " << val2.second << std::endl;
+        }
+    }
+
+    std::cout << "User provided arguments" << std::endl;
+    for (const auto &val : _parsed_args) {
+        const StringVec &vec = val.second;
+
+        std::cout << "Argument: " << val.first << std::endl;
+        for (const auto &vec_val : vec) {
+            std::cout << tab << vec_val << std::endl;
         }
     }
 }
@@ -267,13 +279,9 @@ void CmdArgsCpp::AppendParamInfo(const ArgCode &short_format,
     AppendData(short_format, data);
 }
 
-size_t CmdArgsCpp::FindArgumentsInStringSub(const std::string &cmd_args, const ArgCode &arg)
+std::size_t CmdArgsCpp::FindArgumentsInStringSub(const std::string &cmd_args, const ArgCode &arg)
 {
     size_t pos = cmd_args.find(arg);
-
-    if (pos == std::string::npos) {
-        pos = 0;
-    }
 
     return pos;
 }
@@ -281,31 +289,55 @@ size_t CmdArgsCpp::FindArgumentsInStringSub(const std::string &cmd_args, const A
 void CmdArgsCpp::FindArgumentInString(const std::string &cmd_args, const Data &data, 
                                             PosDataMap &pos_data_map)
 {
-    size_t pos;
+    std::size_t pos = std::string::npos;
 
     pos = FindArgumentsInStringSub(cmd_args, "-" + data.short_format);
 
-    if (!pos) { 
+    if (pos == std::string::npos) { 
         pos = FindArgumentsInStringSub(cmd_args, "--" + data.long_format);
     }
 
-    if (pos) {
+    if (pos != std::string::npos) {
         pos_data_map.insert(std::make_pair(pos, data));
     }
 
 }
 
+void CmdArgsCpp::Tokenize(const std::string str, const char delim, StringVec &vec)
+{
+    std::stringstream ss(str);
+    std::string token;
+         
+    while(getline(ss, token, delim)) {
+        vec.push_back(token);
+    }
+     
+}
+
 void CmdArgsCpp::ExtractCmdArgInfo(const std::string &cmd_arg, const Data &data)
 {
 
-    size_t pos = cmd_arg.find(data.short_format);
+    std::size_t pos = cmd_arg.find(data.short_format);
 
     if (pos == std::string::npos) {
         pos = cmd_arg.find(data.long_format);
     }
 
-    if (pos != std::string::npos) {
+    if (pos != std::string::npos) {        
+        std::string only_arg_value = "";
+
+        if (pos + 1 < cmd_arg.length()) {
+            only_arg_value = cmd_arg.substr(pos + 1);
+        }
+
+        StringVec vec;
+
+        if (only_arg_value.size()) {
+            Tokenize(only_arg_value, ' ', vec);
+        }
         
+        _parsed_args.insert(std::make_pair(data.short_format, vec));
+
     } else {
         assert(0);
     }
@@ -314,15 +346,15 @@ void CmdArgsCpp::ExtractCmdArgInfo(const std::string &cmd_arg, const Data &data)
 
 void CmdArgsCpp::StoreArgumentInfo(const std::string &cmd_args, const PosDataMap &pos_data_map)
 {
-    size_t size = pos_data_map.size();
+    std::size_t size = pos_data_map.size();
 
     if (!size) {
         return;
     }
 
     for (auto it = pos_data_map.begin(); it != pos_data_map.end(); ++it) {
-        size_t pos1 = it->first;
-        size_t pos2 = std::string::npos;
+        std::size_t pos1 = it->first;
+        std::size_t pos2 = std::string::npos;
 
         auto it2 = it;
         if (++it2 != pos_data_map.end()) {
@@ -344,10 +376,9 @@ void CmdArgsCpp::ParseCmdArguments(std::string &cmd_args)
             FindArgumentInString(cmd_args, pair_v.second, pos_data_map);
     };
 
-    StoreArgumentInfo(cmd_args, pos_data_map);
-
     std::for_each(_args_data.begin(), _args_data.end(), func);
     
+    StoreArgumentInfo(cmd_args, pos_data_map);
 }
 
 void CmdArgsCpp::ParseArguments(const int argc, const char *const argv[])
@@ -361,7 +392,6 @@ void CmdArgsCpp::ParseArguments(const int argc, const char *const argv[])
             cmd_args.append(argv[i]);
         }
 
-
-        
+        ParseCmdArguments(cmd_args);
     }
 }
