@@ -1,6 +1,8 @@
 #include <iostream>
 #include "CmdArgsCpp.hpp"
 
+using namespace CmdArgs;
+
 int main(int argc, char** argv){
     
 

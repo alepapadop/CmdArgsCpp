@@ -5,7 +5,7 @@
 #include <sstream>
 
 
-
+using namespace CmdArgs;
 using ExcpMsg = std::string;
 
 extern const unsigned int CmdArgsCppSpace::invalid_code = -1;
@@ -17,6 +17,9 @@ namespace ExceptionMessages {
 	const ExcpMsg arg_exists = "Argument already exists";
 	const ExcpMsg arg_non_exists = "Argument doesn't exists";
     const ExcpMsg arg_parse_error = "Argument parsing error";
+    const ExcpMsg arg_check_error = "Argument check error";
+    const ExcpMsg arg_num_param_error = "Argument number of parameters error";
+    const ExcpMsg arg_format_param_error = "Argument format of parameters error";
 }
 
 void CmdArgsCpp::DebugArgs()
@@ -264,6 +267,45 @@ void CmdArgsCpp::AppendTag(const ArgCode &short_format, const TagCode &tag)
     AppendData(short_format, data);
 }
 
+bool CmdArgsCpp::ValidateNumOfParams(const std::string &num_params)
+{
+    bool ret = true;
+
+    for (const char &c : num_params) {
+        if (!isdigit(c)) {
+            size_t len = num_params.length();
+
+            if (num_params[len - 1] == c) {
+                if (c != CmdArgsCppSpace::any_param[0] && 
+                    c != CmdArgsCppSpace::at_least_postfix[0] &&
+                    c != CmdArgsCppSpace::max_postfix[0]) {
+                        ret = false;
+                }
+            } else {
+                ret = false;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+bool CmdArgsCpp::ValidateFormatOfParams(const std::string &format)
+{
+    bool ret = true;
+
+    if (format.length()) {
+        if (format.compare(CmdArgsCppSpace::str) ||
+            format.compare(CmdArgsCppSpace::integer) ||
+            format.compare(CmdArgsCppSpace::decimal) ||
+            format.compare(CmdArgsCppSpace::alpha)) {
+                ret = false;
+        }
+    }
+
+    return ret;
+}
 
 void CmdArgsCpp::AppendParamInfo(const ArgCode &short_format, 
                         const Mandatory mandatory, 
@@ -274,8 +316,16 @@ void CmdArgsCpp::AppendParamInfo(const ArgCode &short_format,
 
     InitData(data);
     data.mandatory = mandatory;
-    data.num_of_params = num_of_params;
-    data.format_of_params = format_of_params;
+    if (ValidateNumOfParams(num_of_params)) {
+        data.num_of_params = num_of_params;
+    } else {
+        throw std::logic_error(ExceptionMessages::arg_num_param_error);
+    }
+    if (ValidateFormatOfParams(format_of_params)) {
+        data.format_of_params = format_of_params;
+    } else {
+        throw std::logic_error(ExceptionMessages::arg_format_param_error);
+    }
     AppendData(short_format, data);
 }
 
@@ -394,4 +444,213 @@ void CmdArgsCpp::ParseArguments(const int argc, const char *const argv[])
 
         ParseCmdArguments(cmd_args);
     }
+}
+
+unsigned int CmdArgsCpp::ExtractIntFromString(const std::string &str, const std::string &allowed_char)
+{
+    std::string num = "";
+
+    std::size_t len = str.length();
+    for (unsigned int i; i < len; ++i) {
+        if (!std::isdigit(str[i])) {
+            if (i != len - 1) {
+                return 0;
+            }
+        } else {
+            num.push_back(str[i]);
+        }
+    }
+
+    size_t int_val = 0;
+    try {
+        int_val = std::stoi(num);
+    } catch (const std::invalid_argument& ia) {
+        int_val = 0;
+    }
+
+    return int_val;
+}
+
+bool CmdArgsCpp::CheckUserArgumentNumParam(const Data &data, const StringVec &vec)
+{
+    bool ret = false;
+    unsigned int num = 0;
+
+    const std::string &num_par = data.num_of_params;
+
+    if (num_par == CmdArgsCppSpace::any_param) {
+        ret = true;
+    } else if (num_par.find(CmdArgsCppSpace::at_least_postfix) != std::string::npos) {
+        num = ExtractIntFromString(num_par, CmdArgsCppSpace::at_least_postfix);
+
+        if (vec.size() >= num) {
+            ret = true;
+        }  
+
+    } else if (num_par.find(CmdArgsCppSpace::max_postfix) != std::string::npos) {
+        num = ExtractIntFromString(num_par, CmdArgsCppSpace::max_postfix);
+
+        if (vec.size() <= num) {
+            ret = true;
+        }
+    }
+
+    return ret;
+}
+
+bool CmdArgsCpp::StringContainsOnlyCharacters(const std::string &str)
+{
+    bool ret = true;
+
+    for (const char &c : str) {
+        if (!isalpha(c)) {
+            ret = false;          
+        }
+    }
+    return ret;
+}
+
+bool CmdArgsCpp::StringContainsInteger(const std::string &str)
+{
+    bool ret = true;
+    unsigned int len = str.length();
+
+    if (!len) {
+        ret = false;
+    }
+
+    for (unsigned int i = 0; i < len; ++i) {
+        const char c = str[i];
+
+        if (!isdigit(c)) {
+            if (i == 0 && (c == '+' || c == 'i' )) {
+                continue;
+            } else {
+                ret = false;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+bool CmdArgsCpp::StringContainsFloat(const std::string &str)
+{
+    bool ret = true;
+    unsigned int len = str.length();
+
+    if (!len) {
+        ret = false;
+    }
+
+    for (unsigned int i = 0; i < len; ++i) {
+        const char c = str[i];
+
+        if (!isdigit(c)) {
+            if (i == 0 && (c == '+' || c == 'i' )) {
+                continue;
+            } else if (c == '.') {
+                continue;
+            } else {
+                ret = false;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+bool CmdArgsCpp::CheckUserArgumentFormatParam(const Data &data, const StringVec &vec)
+{
+    bool ret = false;
+
+    const std::string &format_par = data.format_of_params;
+
+    if (!format_par.compare(CmdArgsCppSpace::str)) {
+        ret = true;
+
+        auto func = [this, &ret] (std::string str) {
+            if (!StringContainsOnlyCharacters(str)) {
+                ret = false;
+            }
+        };
+
+        std::for_each(vec.begin(), vec.end(), func);
+        
+    } else if (!format_par.compare(CmdArgsCppSpace::alpha)) {
+        ret = true;
+    } else if (!format_par.compare(CmdArgsCppSpace::integer)) {
+        ret = true;
+
+        auto func = [this, &ret] (std::string str) {
+            if (!StringContainsInteger(str)) {
+                ret = false;
+            }
+        };
+
+        std::for_each(vec.begin(), vec.end(), func);
+
+    } else if (!format_par.compare(CmdArgsCppSpace::decimal)) {
+        ret = true;
+
+        auto func = [this, &ret] (std::string str) {
+            if (!StringContainsFloat(str)) {
+                ret = false;
+            }
+        };
+
+        std::for_each(vec.begin(), vec.end(), func);
+    }
+
+    return true;
+}
+
+
+bool CmdArgsCpp::CheckUserArgument(const std::string &short_format, const Data &data, const StringVec &vec)
+{
+    bool ret = true;
+
+    if (short_format != data.short_format) {
+        ret = false;
+        throw std::logic_error(ExceptionMessages::arg_check_error);
+    }
+
+    if (!CheckUserArgumentNumParam(data, vec)) {
+        ret = false;
+        throw std::logic_error(ExceptionMessages::arg_check_error);
+    }
+
+
+    if (!CheckUserArgumentFormatParam(data, vec)) {
+        ret = false;
+        throw std::logic_error(ExceptionMessages::arg_check_error);
+    }
+
+    return ret;
+}
+
+bool CmdArgsCpp::CheckUserArguments()
+{
+    bool ret = true;
+
+    auto func = [this, &ret](std::pair<ArgCode, StringVec> v) {
+        auto it = _args_data.find(v.first);
+
+        if (it != _args_data.end()) {
+
+            try {
+                ret = CheckUserArgument(v.first, it->second, v.second);
+            } catch (std::logic_error e) {
+                ret = false;
+                throw std::logic_error(ExceptionMessages::arg_check_error);
+            }
+        }
+    };
+
+    std::for_each(_parsed_args.begin(), _parsed_args.end(), func);
+
+    return ret;
 }
